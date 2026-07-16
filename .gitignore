@@ -1,0 +1,14 @@
+# Java/Maven
+backend/target/
+*.class
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# OS
+.DS_Store
+
+# Docker
+postgres_data/
