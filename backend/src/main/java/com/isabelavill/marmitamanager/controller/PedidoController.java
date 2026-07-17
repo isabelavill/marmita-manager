@@ -2,6 +2,7 @@ package com.isabelavill.marmitamanager.controller;
 
 import com.isabelavill.marmitamanager.dto.PedidoRequestDTO;
 import com.isabelavill.marmitamanager.dto.PedidoResponseDTO;
+import com.isabelavill.marmitamanager.dto.WebhookPagamentoDTO;
 import com.isabelavill.marmitamanager.service.PedidoService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -24,6 +25,12 @@ public class PedidoController {
     public ResponseEntity<PedidoResponseDTO> criar(@Valid @RequestBody PedidoRequestDTO dto) {
         PedidoResponseDTO criado = pedidoService.criar(dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(criado);
+    }
+
+    @PostMapping("/webhook/pagamento")
+    public ResponseEntity<PedidoResponseDTO> confirmarPagamento(@Valid @RequestBody WebhookPagamentoDTO webhook) {
+        PedidoResponseDTO atualizado = pedidoService.confirmarPagamento(webhook);
+        return ResponseEntity.ok(atualizado);
     }
 
     @GetMapping

@@ -2,8 +2,10 @@ package com.isabelavill.marmitamanager.service;
 
 import com.isabelavill.marmitamanager.dto.PedidoRequestDTO;
 import com.isabelavill.marmitamanager.dto.PedidoResponseDTO;
+import com.isabelavill.marmitamanager.dto.WebhookPagamentoDTO;
 import com.isabelavill.marmitamanager.entity.Cliente;
 import com.isabelavill.marmitamanager.entity.Pedido;
+import com.isabelavill.marmitamanager.entity.StatusPedido;
 import com.isabelavill.marmitamanager.repository.ClienteRepository;
 import com.isabelavill.marmitamanager.repository.PedidoRepository;
 import org.springframework.stereotype.Service;
@@ -50,5 +52,26 @@ public class PedidoService {
             pedido.getStatus(),
             pedido.getCriadoEm()
         );
+    }
+
+    public PedidoResponseDTO confirmarPagamento(WebhookPagamentoDTO webhook) {
+        Pedido pedido = pedidoRepository.findById(webhook.pedidoId())
+            .orElseThrow(() -> new IllegalArgumentException("Pedido não encontrado: " + webhook.pedidoId()));
+
+        // Verificação de idempotência: já processamos essa transação antes?
+        if (pedido.getTransacaoId() != null && pedido.getTransacaoId().equals(webhook.transacaoId())) {
+            // Já processado — retorna o estado atual sem reprocessar
+            return toResponseDTO(pedido);
+        }
+
+        if (!"CONFIRMADO".equalsIgnoreCase(webhook.statusPagamento())) {
+            throw new IllegalArgumentException("Status de pagamento não reconhecido: " + webhook.statusPagamento());
+        }
+
+        pedido.setTransacaoId(webhook.transacaoId());
+        pedido.setStatus(StatusPedido.PAGO);
+
+        Pedido atualizado = pedidoRepository.save(pedido);
+        return toResponseDTO(atualizado);
     }
 }

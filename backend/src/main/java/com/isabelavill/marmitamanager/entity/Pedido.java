@@ -35,4 +35,7 @@ public class Pedido {
 
     @Column(name = "criado_em")
     private LocalDateTime criadoEm = LocalDateTime.now();
+
+    @Column(name = "transacao_id", unique = true)
+    private String transacaoId;
 }
