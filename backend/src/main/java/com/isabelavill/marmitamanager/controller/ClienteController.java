@@ -35,4 +35,15 @@ public class ClienteController {
     public ResponseEntity<ClienteResponseDTO> buscarPorId(@PathVariable Long id) {
         return ResponseEntity.ok(clienteService.buscarPorId(id));
     }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<ClienteResponseDTO> atualizar(@PathVariable Long id, @Valid @RequestBody ClienteRequestDTO dto) {
+        return ResponseEntity.ok(clienteService.atualizar(id, dto));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deletar(@PathVariable Long id) {
+        clienteService.deletar(id);
+        return ResponseEntity.noContent().build();
+    }
 }

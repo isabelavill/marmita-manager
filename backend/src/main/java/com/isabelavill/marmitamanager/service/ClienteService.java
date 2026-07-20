@@ -45,6 +45,25 @@ public class ClienteService {
         return toResponseDTO(cliente);
     }
 
+    public ClienteResponseDTO atualizar(Long id, ClienteRequestDTO dto) {
+    Cliente cliente = clienteRepository.findById(id)
+        .orElseThrow(() -> new IllegalArgumentException("Cliente não encontrado: " + id));
+
+    cliente.setNome(dto.nome());
+    cliente.setEmail(dto.email());
+    cliente.setTelefone(dto.telefone());
+
+    Cliente atualizado = clienteRepository.save(cliente);
+    return toResponseDTO(atualizado);
+    }
+
+    public void deletar(Long id) {
+        if (!clienteRepository.existsById(id)) {
+            throw new IllegalArgumentException("Cliente não encontrado: " + id);
+        }
+        clienteRepository.deleteById(id);
+    }
+
     private ClienteResponseDTO toResponseDTO(Cliente cliente) {
         return new ClienteResponseDTO(
             cliente.getId(),
