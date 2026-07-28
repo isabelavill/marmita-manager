@@ -9,10 +9,7 @@ import com.isabelavill.marmitamanager.entity.StatusPedido;
 import com.isabelavill.marmitamanager.repository.ClienteRepository;
 import com.isabelavill.marmitamanager.repository.PedidoRepository;
 import org.springframework.stereotype.Service;
-import com.isabelavill.marmitamanager.service.S3Service;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -20,14 +17,16 @@ public class PedidoService {
 
     private final PedidoRepository pedidoRepository;
     private final ClienteRepository clienteRepository;
-    private final S3Service s3Service;
+    private final SqsService sqsService;
 
-
-    public PedidoService(PedidoRepository pedidoRepository, ClienteRepository clienteRepository, S3Service s3Service) {
+    public PedidoService(
+        PedidoRepository pedidoRepository,
+        ClienteRepository clienteRepository,
+        SqsService sqsService
+    ) {
         this.pedidoRepository = pedidoRepository;
         this.clienteRepository = clienteRepository;
-        this.s3Service = s3Service;
-
+        this.sqsService = sqsService;
     }
 
     public PedidoResponseDTO criar(PedidoRequestDTO dto) {
@@ -51,8 +50,8 @@ public class PedidoService {
     }
 
     private PedidoResponseDTO toResponseDTO(Pedido pedido) {
-    return toResponseDTO(pedido, null);
-}
+        return toResponseDTO(pedido, null);
+    }
 
     private PedidoResponseDTO toResponseDTO(Pedido pedido, String chaveComprovante) {
         return new PedidoResponseDTO(
@@ -83,26 +82,9 @@ public class PedidoService {
 
         Pedido atualizado = pedidoRepository.save(pedido);
 
-        // Gera e salva o comprovante no S3
-        String conteudoComprovante = """
-            COMPROVANTE DE PAGAMENTO
-            -------------------------
-            Pedido: %d
-            Cliente: %s
-            Descrição: %s
-            Valor: R$ %s
-            Transação: %s
-            Status: PAGO
-            """.formatted(
-                atualizado.getId(),
-                atualizado.getCliente().getNome(),
-                atualizado.getDescricao(),
-                atualizado.getValorTotal(),
-                atualizado.getTransacaoId()
-            );
+        // Ao invés de gerar o comprovante aqui (síncrono), manda pra fila
+        sqsService.enviarMensagemGerarComprovante(atualizado.getId());
 
-        String chaveComprovante = s3Service.salvarComprovante(conteudoComprovante, atualizado.getId());
-
-        return toResponseDTO(atualizado, chaveComprovante);
-    }    
+        return toResponseDTO(atualizado);
+    }
 }
