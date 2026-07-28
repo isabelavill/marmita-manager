@@ -9,7 +9,10 @@ import com.isabelavill.marmitamanager.entity.StatusPedido;
 import com.isabelavill.marmitamanager.repository.ClienteRepository;
 import com.isabelavill.marmitamanager.repository.PedidoRepository;
 import org.springframework.stereotype.Service;
+import com.isabelavill.marmitamanager.service.S3Service;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -17,10 +20,14 @@ public class PedidoService {
 
     private final PedidoRepository pedidoRepository;
     private final ClienteRepository clienteRepository;
+    private final S3Service s3Service;
 
-    public PedidoService(PedidoRepository pedidoRepository, ClienteRepository clienteRepository) {
+
+    public PedidoService(PedidoRepository pedidoRepository, ClienteRepository clienteRepository, S3Service s3Service) {
         this.pedidoRepository = pedidoRepository;
         this.clienteRepository = clienteRepository;
+        this.s3Service = s3Service;
+
     }
 
     public PedidoResponseDTO criar(PedidoRequestDTO dto) {
@@ -44,13 +51,18 @@ public class PedidoService {
     }
 
     private PedidoResponseDTO toResponseDTO(Pedido pedido) {
+    return toResponseDTO(pedido, null);
+}
+
+    private PedidoResponseDTO toResponseDTO(Pedido pedido, String chaveComprovante) {
         return new PedidoResponseDTO(
             pedido.getId(),
-            pedido.getCliente().getNome(), // <-- aqui é onde o N+1 vai acontecer
+            pedido.getCliente().getNome(),
             pedido.getDescricao(),
             pedido.getValorTotal(),
             pedido.getStatus(),
-            pedido.getCriadoEm()
+            pedido.getCriadoEm(),
+            chaveComprovante
         );
     }
 
@@ -58,9 +70,7 @@ public class PedidoService {
         Pedido pedido = pedidoRepository.findById(webhook.pedidoId())
             .orElseThrow(() -> new IllegalArgumentException("Pedido não encontrado: " + webhook.pedidoId()));
 
-        // Verificação de idempotência: já processamos essa transação antes?
         if (pedido.getTransacaoId() != null && pedido.getTransacaoId().equals(webhook.transacaoId())) {
-            // Já processado — retorna o estado atual sem reprocessar
             return toResponseDTO(pedido);
         }
 
@@ -72,6 +82,27 @@ public class PedidoService {
         pedido.setStatus(StatusPedido.PAGO);
 
         Pedido atualizado = pedidoRepository.save(pedido);
-        return toResponseDTO(atualizado);
-    }
+
+        // Gera e salva o comprovante no S3
+        String conteudoComprovante = """
+            COMPROVANTE DE PAGAMENTO
+            -------------------------
+            Pedido: %d
+            Cliente: %s
+            Descrição: %s
+            Valor: R$ %s
+            Transação: %s
+            Status: PAGO
+            """.formatted(
+                atualizado.getId(),
+                atualizado.getCliente().getNome(),
+                atualizado.getDescricao(),
+                atualizado.getValorTotal(),
+                atualizado.getTransacaoId()
+            );
+
+        String chaveComprovante = s3Service.salvarComprovante(conteudoComprovante, atualizado.getId());
+
+        return toResponseDTO(atualizado, chaveComprovante);
+    }    
 }

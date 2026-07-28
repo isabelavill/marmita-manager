@@ -11,5 +11,6 @@ public record PedidoResponseDTO(
     String descricao,
     BigDecimal valorTotal,
     StatusPedido status,
-    LocalDateTime criadoEm
+    LocalDateTime criadoEm,
+    String chaveComprovante
 ) {}
