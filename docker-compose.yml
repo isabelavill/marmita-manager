@@ -25,6 +25,9 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/marmita_manager
       SPRING_DATASOURCE_USERNAME: marmita_user
       SPRING_DATASOURCE_PASSWORD: marmita_pass
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_REGION: us-east-2
     ports:
       - "8080:8080"
     depends_on:

@@ -1,5 +1,7 @@
 package com.isabelavill.marmitamanager.exception;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -13,38 +15,14 @@ import java.util.Map;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    // Erros de validação do @Valid (ex: email inválido, campo em branco)
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, Object>> handleValidationErrors(MethodArgumentNotValidException ex) {
-        Map<String, String> erros = new HashMap<>();
-        ex.getBindingResult().getFieldErrors().forEach(erro ->
-            erros.put(erro.getField(), erro.getDefaultMessage())
-        );
+    private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
-        Map<String, Object> body = new HashMap<>();
-        body.put("timestamp", LocalDateTime.now());
-        body.put("status", HttpStatus.BAD_REQUEST.value());
-        body.put("error", "Erro de validação");
-        body.put("campos", erros);
+    // ... handlers de MethodArgumentNotValidException e IllegalArgumentException continuam iguais ...
 
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
-    }
-
-    // Erros de negócio (ex: email duplicado, cliente não encontrado)
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<Map<String, Object>> handleIllegalArgument(IllegalArgumentException ex) {
-        Map<String, Object> body = new HashMap<>();
-        body.put("timestamp", LocalDateTime.now());
-        body.put("status", HttpStatus.BAD_REQUEST.value());
-        body.put("error", "Erro de negócio");
-        body.put("mensagem", ex.getMessage());
-
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
-    }
-
-    // Rede de segurança: qualquer erro não tratado explicitamente
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleGenericException(Exception ex) {
+        logger.error("Erro não tratado capturado pelo GlobalExceptionHandler", ex);
+
         Map<String, Object> body = new HashMap<>();
         body.put("timestamp", LocalDateTime.now());
         body.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());

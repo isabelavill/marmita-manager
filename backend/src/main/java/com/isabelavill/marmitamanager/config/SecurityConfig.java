@@ -62,6 +62,7 @@ public class SecurityConfig {
                 .requestMatchers("/docs/**", "/api-docs/**", "/swagger-ui/**").permitAll()
                 .requestMatchers("/api/pedidos/webhook/**").permitAll()
                 .requestMatchers("/actuator/health").permitAll()
+                .requestMatchers("/teste-s3").permitAll()
                 .anyRequest().authenticated()
             )
             .authenticationProvider(authenticationProvider())
