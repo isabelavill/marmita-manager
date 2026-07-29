@@ -12,3 +12,5 @@ backend/target/
 
 # Docker
 postgres_data/
+
+.env
