@@ -23,6 +23,9 @@ pipeline {
         }
 
         stage('Test Backend') {
+            environment {
+                TESTCONTAINERS_RYUK_DISABLED = 'true'
+            }
             steps {
                 dir('backend') {
                     sh './mvnw test'
