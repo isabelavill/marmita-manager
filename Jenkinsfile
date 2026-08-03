@@ -25,6 +25,7 @@ pipeline {
         stage('Test Backend') {
             environment {
                 TESTCONTAINERS_RYUK_DISABLED = 'true'
+                TESTCONTAINERS_HOST_OVERRIDE = 'host.docker.internal'
             }
             steps {
                 dir('backend') {
