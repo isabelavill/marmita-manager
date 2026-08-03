@@ -4,6 +4,7 @@ pipeline {
     environment {
         DOCKER_IMAGE_BACKEND = 'marmita-backend'
         DOCKER_IMAGE_FRONTEND = 'marmita-frontend'
+        EC2_HOST = 'ubuntu@18.222.4.220'
     }
 
     stages {
@@ -29,23 +30,24 @@ pipeline {
             }
         }
 
-        stage('Build Docker Images') {
+        stage('Deploy to EC2') {
             steps {
-                sh 'docker build -t $DOCKER_IMAGE_BACKEND:$BUILD_NUMBER ./backend'
-                sh 'docker build -t $DOCKER_IMAGE_FRONTEND:$BUILD_NUMBER ./frontend'
-            }
-        }
-
-        stage('Deploy') {
-            steps {
-                sh 'docker compose up -d --build'
+                sshagent(credentials: ['ec2-ssh-key']) {
+                    sh """
+                        ssh -o StrictHostKeyChecking=no ${EC2_HOST} '
+                            cd ~/marmita-manager &&
+                            git pull &&
+                            docker compose up -d --build
+                        '
+                    """
+                }
             }
         }
     }
 
     post {
         success {
-            echo 'Pipeline executado com sucesso!'
+            echo 'Deploy realizado com sucesso!'
         }
         failure {
             echo 'Pipeline falhou — verifique os logs acima.'
